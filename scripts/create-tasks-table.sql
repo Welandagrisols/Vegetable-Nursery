@@ -54,10 +54,8 @@ ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.task_consumables ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_items ENABLE ROW LEVEL SECURITY;
 
--- Create policies for public access
-CREATE POLICY "Enable all access for tasks" ON public.tasks FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all access for task_consumables" ON public.task_consumables FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all access for sale_items" ON public.sale_items FOR ALL USING (true) WITH CHECK (true);
+-- NOTE: permissive policies were removed.
+-- Use scripts/fix-nurserypro-critical-9.sql for strict nursery_id + role based policies.
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_tasks_batch_sku ON public.tasks(batch_sku);

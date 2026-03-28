@@ -165,7 +165,7 @@ $$;
 
 -- Grant necessary permissions for the function
 GRANT EXECUTE ON FUNCTION record_sale_atomic TO authenticated;
-GRANT EXECUTE ON FUNCTION record_sale_atomic TO anon;
+REVOKE EXECUTE ON FUNCTION record_sale_atomic FROM anon;
 
 -- Create indexes for better performance on frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_inventory_quantity ON public.inventory(quantity) WHERE quantity > 0;

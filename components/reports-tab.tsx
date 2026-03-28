@@ -137,8 +137,9 @@ export function ReportsTab() {
           ?.filter((task: any) => task.batch_sku === batchSku)
           .reduce((sum: any, task: any) => sum + (task.total_cost || 0), 0) || 0
 
-        const totalCostPerSeedling = item.quantity > 0 
-          ? (batchCost + taskCostsForBatch) / item.quantity 
+        const openingQuantity = item.opening_quantity || item.quantity || 0
+        const totalCostPerSeedling = openingQuantity > 0 
+          ? (batchCost + taskCostsForBatch) / openingQuantity 
           : 0
 
         const profitPerSeedling = item.price - totalCostPerSeedling
@@ -155,14 +156,15 @@ export function ReportsTab() {
           plant_name: item.plant_name,
           category: item.category,
           quantity: item.quantity,
+          opening_quantity: openingQuantity,
           selling_price: item.price,
           total_batch_cost: batchCost,
           total_task_costs: taskCostsForBatch,
           total_cost_per_seedling: totalCostPerSeedling,
           profit_per_seedling: profitPerSeedling,
           profit_margin: profitMargin,
-          total_batch_value: item.quantity * item.price,
-          total_batch_profit: item.quantity * profitPerSeedling,
+          total_batch_value: openingQuantity * item.price,
+          total_batch_profit: openingQuantity * profitPerSeedling,
           seedlings_sold: seedlingsSold,
           revenue_generated: revenueGenerated,
           profit_realized: profitRealized,

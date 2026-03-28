@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import { isDemoMode } from "@/lib/supabase"
 import { useForm } from "react-hook-form" // Import useForm
+import { useAuth } from "@/contexts/auth-context"
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export function AddSaleForm({ onSuccess }: AddSaleFormProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [isNewCustomer, setIsNewCustomer] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const defaultFormValues = {
     inventory_id: "",
@@ -88,7 +90,16 @@ export function AddSaleForm({ onSuccess }: AddSaleFormProps) {
 
   async function fetchCustomers() {
     try {
-      const { data, error } = await supabase.from("customers").select("*").order("name", { ascending: true })
+      const nurseryId =
+        (user?.app_metadata?.nursery_id as string | undefined) ||
+        (user?.user_metadata?.nursery_id as string | undefined)
+
+      let query = supabase.from("customers").select("*").order("name", { ascending: true })
+      if (nurseryId) {
+        query = query.eq("nursery_id", nurseryId)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       setCustomers(data || [])
@@ -179,16 +190,6 @@ export function AddSaleForm({ onSuccess }: AddSaleFormProps) {
       return
     }
 
-    if (Number(dataFromForm.quantity) > selectedInventoryItem.quantity) {
-      toast({
-        title: "Insufficient Stock",
-        description: `Cannot sell ${dataFromForm.quantity} units. Only ${selectedInventoryItem.quantity} available.`,
-        variant: "destructive",
-      })
-      fetchInventory()
-      return
-    }
-
     if (isNewCustomer && (!dataFromForm.customer_name || !dataFromForm.customer_contact)) {
       toast({
         title: "Validation Error",
@@ -202,75 +203,20 @@ export function AddSaleForm({ onSuccess }: AddSaleFormProps) {
       setLoading(true)
       console.log("Starting sale transaction...")
 
-      let customerId = dataFromForm.customer_id || null
+      const { data: rpcData, error: rpcError } = await supabase.rpc("process_sale", {
+        p_inventory_id: dataFromForm.inventory_id,
+        p_quantity: Number(dataFromForm.quantity),
+        p_sale_date: dataFromForm.sale_date,
+        p_customer_id: isNewCustomer ? null : dataFromForm.customer_id || null,
+        p_customer_name: isNewCustomer ? dataFromForm.customer_name?.trim() || null : null,
+        p_customer_contact: isNewCustomer ? dataFromForm.customer_contact?.trim() || null : null,
+        p_customer_email: isNewCustomer ? dataFromForm.customer_email?.trim() || null : null,
+        p_total_amount: Number(dataFromForm.total_amount),
+      })
 
-      // If new customer, create customer first
-      if (isNewCustomer && dataFromForm.customer_name && dataFromForm.customer_contact) {
-        console.log("Creating new customer...")
-        const { data: customerData, error: customerError } = await supabase
-          .from("customers")
-          .insert({
-            name: dataFromForm.customer_name.trim(),
-            contact: dataFromForm.customer_contact.trim(),
-            email: dataFromForm.customer_email?.trim() || null,
-          } as any)
-          .select()
-          .single()
-
-        if (customerError) {
-          console.error("Customer creation error:", customerError)
-          toast({
-            title: "Error",
-            description: `Failed to create customer: ${customerError.message}`,
-            variant: "destructive",
-          })
-          return
-        }
-        customerId = (customerData as any).id
-        console.log("Customer created with ID:", customerId)
-      }
-
-      // Insert the sale record
-      console.log("Inserting sale record...")
-      const { data: saleData, error: saleError } = await supabase
-        .from("sales")
-        .insert({
-          inventory_id: dataFromForm.inventory_id,
-          quantity: Number(dataFromForm.quantity),
-          sale_date: dataFromForm.sale_date,
-          customer_id: customerId,
-          total_amount: Number(dataFromForm.total_amount),
-        } as any)
-        .select()
-        .single()
-
-      if (saleError) {
-        console.error("Sale insert error:", saleError)
-        toast({
-          title: "Error",
-          description: `Failed to record sale: ${saleError.message}`,
-          variant: "destructive",
-        })
-        return
-      }
-      console.log("Sale recorded:", saleData)
-
-      // Update inventory quantity
-      const newQuantity = selectedInventoryItem.quantity - Number(dataFromForm.quantity)
-      console.log("Updating inventory quantity to:", newQuantity)
-      
-      const { error: inventoryError } = await supabase
-        .from("inventory")
-        .update({ quantity: newQuantity } as any)
-        .eq("id", dataFromForm.inventory_id)
-
-      if (inventoryError) {
-        console.error("Inventory update error:", inventoryError)
-        toast({
-          title: "Warning",
-          description: "Sale recorded but inventory update failed. Please check inventory manually.",
-          variant: "destructive",
-        })
+      if (rpcError) throw rpcError
+      if (!rpcData?.success) {
+        throw new Error(rpcData?.message || "Failed to record sale")
       }
 
       console.log("Sale transaction completed successfully")
@@ -303,7 +249,7 @@ export function AddSaleForm({ onSuccess }: AddSaleFormProps) {
       console.log("Calling onSuccess...")
       onSuccess()
     } catch (error: any) {
-      console.error("Error calling atomic sale RPC:", error)
+      console.error("Error recording atomic sale:", error)
       toast({
         title: "Error recording sale",
         description: error.message || "Failed to record sale",

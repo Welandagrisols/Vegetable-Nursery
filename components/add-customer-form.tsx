@@ -71,12 +71,21 @@ export function AddCustomerForm({ onSuccess }: AddCustomerFormProps) {
     try {
       setLoading(true)
       console.log("Inserting customer...")
+      const nurseryId =
+        (user.app_metadata?.nursery_id as string | undefined) ||
+        (user.user_metadata?.nursery_id as string | undefined)
+
+      if (!nurseryId) {
+        throw new Error("Your account is missing nursery access. Please contact support.")
+      }
 
       const { data, error } = await supabase.from("customers").insert({
         name: formData.name,
         contact: formData.contact,
         email: formData.email || null,
-      } as any).select().single()
+        nursery_id: nurseryId,
+        user_id: user.id,
+      }).select().single()
 
       if (error) {
         console.error("Customer insert error:", error)

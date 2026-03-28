@@ -107,6 +107,7 @@ export function AddConsumableForm({ onSuccess, onClose }: AddConsumableFormProps
         scientific_name: `[Consumable] ${finalFormData.unit}`,
         category: finalFormData.category,
         quantity: Number(finalFormData.quantity),
+        opening_quantity: Number(finalFormData.quantity),
         age: null,
         date_planted: finalFormData.date_planted || null,
         status: finalFormData.status,
@@ -129,7 +130,7 @@ export function AddConsumableForm({ onSuccess, onClose }: AddConsumableFormProps
 
       const { data, error } = await supabase
         .from("inventory")
-        .insert([insertData] as any)
+        .insert([insertData])
         .select()
 
       if (error) {

@@ -47,6 +47,7 @@ export function CustomersTab() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [whatsappLinks, setWhatsappLinks] = useState<{name: string, contact: string, url: string, opened: boolean}[]>([])
   const [linksDialogOpen, setLinksDialogOpen] = useState(false)
+  const [customerValueById, setCustomerValueById] = useState<Record<string, number>>({})
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -87,15 +88,42 @@ export function CustomersTab() {
   async function fetchCustomers() {
     try {
       setLoading(true)
+      const nurseryId =
+        (user?.app_metadata?.nursery_id as string | undefined) ||
+        (user?.user_metadata?.nursery_id as string | undefined)
 
-      // Removed user filtering to show all data (suspended user differentiation)
-      const { data, error } = await supabase
+      let query = supabase
         .from("customers")
         .select("*")
         .order("name", { ascending: true })
+      if (nurseryId) {
+        query = query.eq("nursery_id", nurseryId)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       setCustomers(data || [])
+
+      const customerIds = (data || []).map((c) => c.id)
+      if (customerIds.length === 0) {
+        setCustomerValueById({})
+        return
+      }
+
+      const { data: salesData, error: salesError } = await supabase
+        .from("sales")
+        .select("customer_id,total_amount")
+        .in("customer_id", customerIds)
+
+      if (salesError) throw salesError
+
+      const totals: Record<string, number> = {}
+      for (const sale of salesData || []) {
+        if (!sale.customer_id) continue
+        totals[sale.customer_id] = (totals[sale.customer_id] || 0) + Number(sale.total_amount || 0)
+      }
+      setCustomerValueById(totals)
     } catch (error: any) {
       console.error("Error fetching customers:", error)
       throw error
@@ -375,7 +403,7 @@ export function CustomersTab() {
     totalCustomers: customers.length,
     activeCustomers: customers.filter(c => new Date(c.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length, // Assuming active means created in last 30 days
     newCustomers: customers.filter(c => new Date(c.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length, // Same as active for this example
-    totalValue: customers.reduce((sum, customer) => sum + (Number(customer.contact) || 0), 0) // This is a placeholder and likely incorrect for total value
+    totalValue: customers.reduce((sum, customer) => sum + (customerValueById[customer.id] || 0), 0)
   }
 
 

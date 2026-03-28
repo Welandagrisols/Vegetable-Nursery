@@ -697,6 +697,10 @@ export function WebsiteIntegrationTab() {
                 items={waterSources}
                 type="water"
                 isDemo={isDemoMode || !waterSourcesTableExists}
+                onEditWaterSource={handleEditWaterSource}
+                onDeleteWaterSource={handleDeleteWaterSource}
+                onEditGreenChampion={handleEditGreenChampion}
+                onDeleteGreenChampion={handleDeleteGreenChampion}
               />
             </TabsContent>
 
@@ -729,9 +733,21 @@ interface GalleryListProps {
   items: (WaterSource | GreenChampion)[]
   type: 'water' | 'champion'
   isDemo: boolean
+  onEditWaterSource: (source: WaterSource) => void
+  onDeleteWaterSource: (id: string) => void
+  onEditGreenChampion: (champion: GreenChampion) => void
+  onDeleteGreenChampion: (id: string) => void
 }
 
-function GalleryList({ items, type, isDemo }: GalleryListProps) {
+function GalleryList({
+  items,
+  type,
+  isDemo,
+  onEditWaterSource,
+  onDeleteWaterSource,
+  onEditGreenChampion,
+  onDeleteGreenChampion,
+}: GalleryListProps) {
   if (items.length === 0) {
     return (
       <Card>
@@ -795,11 +811,9 @@ function GalleryList({ items, type, isDemo }: GalleryListProps) {
                   size="sm"
                   onClick={() => {
                     if (type === 'water') {
-                      // @ts-ignore
-                      handleEditWaterSource(item as WaterSource)
+                      onEditWaterSource(item as WaterSource)
                     } else {
-                      // @ts-ignore
-                      handleEditGreenChampion(item as GreenChampion)
+                      onEditGreenChampion(item as GreenChampion)
                     }
                   }}
                   disabled={isDemo}
@@ -811,11 +825,9 @@ function GalleryList({ items, type, isDemo }: GalleryListProps) {
                   size="sm"
                   onClick={() => {
                     if (type === 'water') {
-                      // @ts-ignore
-                      handleDeleteWaterSource(item.id)
+                      onDeleteWaterSource(item.id)
                     } else {
-                      // @ts-ignore
-                      handleDeleteGreenChampion(item.id)
+                      onDeleteGreenChampion(item.id)
                     }
                   }}
                   className="text-destructive hover:text-destructive"

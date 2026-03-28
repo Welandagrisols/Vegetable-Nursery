@@ -249,6 +249,7 @@ export function BulkImportForm({ onSuccess }: BulkImportFormProps) {
             scientific_name: plant.scientific_name || null,
             category: plant.category,
             quantity: plant.quantity,
+            opening_quantity: plant.quantity,
             price: plant.price,
             batch_cost: plant.batch_cost || 0,
             cost_per_seedling: plant.batch_cost ? plant.batch_cost / plant.quantity : 0,
@@ -269,7 +270,7 @@ export function BulkImportForm({ onSuccess }: BulkImportFormProps) {
           insertData.map((item) => ({ name: item.plant_name, sku: item.sku, current: item.ready_for_sale })),
         )
 
-        const { data, error } = await supabase.from("inventory").insert(insertData as any).select()
+        const { data, error } = await supabase.from("inventory").insert(insertData).select()
 
         if (error) {
           console.error("Batch import error:", error)
@@ -289,7 +290,7 @@ export function BulkImportForm({ onSuccess }: BulkImportFormProps) {
                 existingSKUSet.add(retrySKU)
 
                 const retryItem = { ...item, sku: retrySKU }
-                const { error: retryError } = await supabase.from("inventory").insert([retryItem] as any)
+                const { error: retryError } = await supabase.from("inventory").insert([retryItem])
 
                 if (!retryError) {
                   imported += 1

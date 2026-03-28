@@ -336,16 +336,6 @@ export function OpsTab() {
 
   useEffect(() => {
     fetchStats()
-
-    // Auto-remove duplicates on first load if not in demo mode
-    const hasRemovedDuplicates = localStorage.getItem('duplicates_removed')
-    if (!isDemoMode && !hasRemovedDuplicates) {
-      // Set a small delay to ensure component is fully mounted
-      setTimeout(() => {
-        handleClearDuplicates()
-        localStorage.setItem('duplicates_removed', 'true')
-      }, 1000)
-    }
   }, [])
 
   return (

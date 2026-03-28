@@ -95,14 +95,15 @@ export function AddInventoryForm({ onSuccess, onClose }: AddInventoryFormProps) 
         finalFormData.sku = `${prefix}${randomNum}`
       }
 
-      const calculatedCostPerSeedling =
-        finalFormData.quantity > 0 ? finalFormData.batch_cost / finalFormData.quantity : 0
+      const openingQuantity = Number(finalFormData.quantity)
+      const calculatedCostPerSeedling = openingQuantity > 0 ? finalFormData.batch_cost / openingQuantity : 0
 
       const insertData = {
         plant_name: finalFormData.plant_name.trim(),
         scientific_name: finalFormData.scientific_name?.trim() || null,
         category: finalFormData.category,
         quantity: Number(finalFormData.quantity),
+        opening_quantity: openingQuantity,
         age: finalFormData.age?.trim() || null,
         date_planted: finalFormData.date_planted || null,
         status: finalFormData.status,
@@ -125,7 +126,7 @@ export function AddInventoryForm({ onSuccess, onClose }: AddInventoryFormProps) 
 
       const { data, error } = await supabase
         .from("inventory")
-        .insert([insertData] as any)
+        .insert([insertData])
         .select()
 
       if (error) {

@@ -248,8 +248,9 @@ export function EditInventoryForm({ item, onSuccess, onCancel }: EditInventoryFo
       setLoading(true)
 
       // Calculate cost per seedling for plants
+      const openingQuantity = Number(item.opening_quantity || formData.quantity || 0)
       const calculatedCostPerSeedling =
-        !isConsumable && formData.quantity > 0 ? formData.batch_cost / formData.quantity : item.cost_per_seedling || 0
+        !isConsumable && openingQuantity > 0 ? formData.batch_cost / openingQuantity : item.cost_per_seedling || 0
 
       // Upload image if selected and link it to the inventory item
       let imageUrl = formData.image_url
@@ -306,7 +307,7 @@ export function EditInventoryForm({ item, onSuccess, onCancel }: EditInventoryFo
         updated_at: new Date().toISOString(),
       }
 
-      const { data, error } = await (supabase.from("inventory") as any).update(updateData).eq("id", item.id)
+      const { data, error } = await supabase.from("inventory").update(updateData).eq("id", item.id).select()
 
       if (error) {
         console.error("Update error:", error)

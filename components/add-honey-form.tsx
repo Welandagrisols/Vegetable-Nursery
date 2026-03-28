@@ -128,6 +128,7 @@ export function AddHoneyForm({ onSuccess, onClose }: AddHoneyFormProps) {
         scientific_name: finalFormData.honey_type,
         category: "Organic Honey",
         quantity: Number(finalFormData.quantity),
+        opening_quantity: Number(finalFormData.quantity),
         unit: finalFormData.unit,
         age: finalFormData.packaging_size,
         date_planted: finalFormData.harvest_date || null,
@@ -146,7 +147,7 @@ export function AddHoneyForm({ onSuccess, onClose }: AddHoneyFormProps) {
         updated_at: new Date().toISOString(),
       }
 
-      const { data, error } = await supabase.from("inventory").insert([insertData] as any).select()
+      const { data, error } = await supabase.from("inventory").insert([insertData]).select()
 
       if (error) {
         console.error("Insert error:", error)

@@ -187,9 +187,9 @@ export function SalesTab() {
     }
 
     try {
-      const { error } = await supabase.from("sales").delete().eq("id", saleId)
-
+      const { data, error } = await supabase.rpc("delete_sale_atomic", { p_sale_id: saleId })
       if (error) throw error
+      if (!data?.success) throw new Error(data?.message || "Failed to delete sale")
 
       toast({
         title: "Sale Deleted",
